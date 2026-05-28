@@ -1,0 +1,196 @@
+  Conexao Java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+public class ConexaoBD {
+    private static final String URL = "jdbc:mysql://localhost:3306/cadastro_usuario";
+    private static final String USUARIO = "root";
+    private static final String SENHA = "";
+
+    public static Connection conectar() throws SQLException {
+        return DriverManager.getConnection(URL, USUARIO, SENHA);
+    }
+}
+
+
+formulario java
+
+import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.sql.SQLException;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+
+public class Formulario extends JFrame {
+    private final JTextField campoNome = new JTextField(20);
+    private final JTextField campoEmail = new JTextField(20);
+    private final JPasswordField campoSenha = new JPasswordField(20);
+    private final UsuarioDAO usuarioDAO = new UsuarioDAO();
+
+    public Formulario() {
+        super("Cadastro de Usuario");
+        configurarJanela();
+        montarFormulario();
+    }
+
+    private void configurarJanela() {
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(380, 230);
+        setLocationRelativeTo(null);
+        setResizable(false);
+    }
+
+    private void montarFormulario() {
+        JPanel painel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(8, 8, 8, 8);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        adicionarCampo(painel, gbc, "Nome:", campoNome, 0);
+        adicionarCampo(painel, gbc, "Email:", campoEmail, 1);
+        adicionarCampo(painel, gbc, "Senha:", campoSenha, 2);
+
+        JButton botaoSalvar = new JButton("Salvar");
+        botaoSalvar.addActionListener(event -> salvarUsuario());
+
+        gbc.gridx = 1;
+        gbc.gridy = 3;
+        painel.add(botaoSalvar, gbc);
+
+        add(painel);
+    }
+
+    private void adicionarCampo(JPanel painel, GridBagConstraints gbc, String texto, JTextField campo, int linha) {
+        gbc.gridx = 0;
+        gbc.gridy = linha;
+        painel.add(new JLabel(texto), gbc);
+
+        gbc.gridx = 1;
+        painel.add(campo, gbc);
+    }
+
+    private void salvarUsuario() {
+        String nome = campoNome.getText().trim();
+        String email = campoEmail.getText().trim();
+        String senha = new String(campoSenha.getPassword());
+
+        if (nome.isEmpty() || email.isEmpty() || senha.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Preencha todos os campos.");
+            return;
+        }
+
+        try {
+            usuarioDAO.salvar(new Usuario(nome, email, senha));
+            JOptionPane.showMessageDialog(this, "Usuario salvo com sucesso.");
+            limparCampos();
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(this, "Erro ao salvar usuario: " + ex.getMessage());
+        }
+    }
+
+    private void limparCampos() {
+        campoNome.setText("");
+        campoEmail.setText("");
+        campoSenha.setText("");
+    }
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> new Formulario().setVisible(true));
+    }
+}
+
+Main Java
+
+public class Main {
+    public static void main(String[] args) {
+        Formulario.main(args);
+    }
+}
+
+Usuario Java
+
+public class Usuario {
+    private int id;
+    private String nome;
+    private String email;
+    private String senha;
+
+    public Usuario() {
+    }
+
+    public Usuario(String nome, String email, String senha) {
+        this.nome = nome;
+        this.email = email;
+        this.senha = senha;
+    }
+
+    public Usuario(int id, String nome, String email, String senha) {
+        this.id = id;
+        this.nome = nome;
+        this.email = email;
+        this.senha = senha;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public String getNome() {
+        return nome;
+    }
+
+    public void setNome(String nome) {
+        this.nome = nome;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getSenha() {
+        return senha;
+    }
+
+    public void setSenha(String senha) {
+        this.senha = senha;
+    }
+}
+
+Usuario MYSQL
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+
+public class UsuarioDAO {
+    public void salvar(Usuario usuario) throws SQLException {
+        String sql = "INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)";
+
+        try (Connection conexao = ConexaoBD.conectar();
+             PreparedStatement stmt = conexao.prepareStatement(sql)) {
+            stmt.setString(1, usuario.getNome());
+            stmt.setString(2, usuario.getEmail());
+            stmt.setString(3, usuario.getSenha());
+            stmt.executeUpdate();
+        }
+    }
+}
+
+
+
